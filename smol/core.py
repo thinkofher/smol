@@ -52,21 +52,11 @@ def step(f_or_title):
 
 
 @attr.s(frozen=True, kw_only=True)
-class Data:
-    """Represents data that can be shared (but not mutated) from one
-    step to another.
-    """
-
-    args = attr.ib(factory=tuple)
-    kwargs = attr.ib(factory=dict)
-
-
-@attr.s(frozen=True, kw_only=True)
 class State:
     """State holds data and another useful flag when running tests."""
 
     data = attr.ib(
-        factory=lambda: Data(), validator=attr.validators.instance_of(Data)
+        factory=dict, validator=attr.validators.instance_of(dict)
     )
     break_execution = attr.ib(
         factory=bool, validator=attr.validators.instance_of(bool)
@@ -81,12 +71,12 @@ class State:
         return self.break_execution == True and self.skipped == False
 
 
-def success(*args, **kwargs):
+def success(**kwargs):
     """Use when step has finished with success. You can use *args and **kwargs
     for sharing data between steps.
     """
     return State(
-        data=Data(args=args, kwargs=kwargs),
+        data=kwargs,
         break_execution=False,
         skipped=False,
     )
@@ -129,71 +119,24 @@ def run_steps(steps, init_data=None):
     result = []
     init, rest = _head_n_tail(steps)
 
-    if init_data is not None:
-        state = init(*init_data.args, **init_data.kwargs)
-    else:
-        state = init()
-    result.append(Result(step=init, state=state))
+    try:
+        if init_data is not None:
+            state = init(**init_data)
+        else:
+            state = init()
+    except Exception as e:
+        state = failure(f'Exception {type(e)} occured.')
+        result.append(Result(step=init, state=state))
 
     for step in rest:
         if state.is_failure() or state.skipped:
             state = skip(step)()
         else:
-            state = step(*state.data.args, **state.data.kwargs)
+            try:
+                state = step(**state.data)
+            except Exception as e:
+                state = failure(f'Exception {type(e)} occured.')
+
         result.append(Result(step=step, state=state))
 
     return result
-
-
-@step
-def add_two_numbers(a, b, *args, **kwargs):
-    """Returns succesfully sum of two given numbers."""
-    return success(result=a + b)
-
-
-def add(num):
-    @step(f"Add {num}.")
-    def _add_step(result):
-        return success(result=result + num)
-
-    desc = f"Adds {num} to given result."
-    return attr.evolve(_add_step, description=desc)
-
-
-def substract(num):
-    @step(f"Substract {num}.")
-    def _sub_step(result):
-        return success(result=result - num)
-
-    desc = f"Substract {num} from given result."
-    return attr.evolve(_sub_step, description=desc)
-
-
-def result_is(num):
-    @step(f"Given result is {num}.")
-    def _result_step(result):
-        if result == num:
-            return success(result=result)
-        else:
-            return failure(f"Given result {result} is not equal to {num}.")
-
-    desc = f"Checks whether given result is equal to {num}."
-
-    return attr.evolve(_result_step, description=desc)
-
-
-if __name__ == "__main__":
-    steps = [
-        add_two_numbers,
-        result_is(50),
-        add(10),
-        add(5),
-        substract(15),
-        add(1),
-        result_is(51),
-    ]
-    import pprint
-
-    res = run_steps(steps, init_data=Data(args=(20, 30)))
-    pprint.pprint(res)
-    print(all(not result.state.skipped for result in res))
