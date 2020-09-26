@@ -1,5 +1,6 @@
-import attr
 from collections import namedtuple
+
+import attr
 
 
 @attr.s(frozen=True, kw_only=True)
