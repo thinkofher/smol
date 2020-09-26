@@ -1,3 +1,4 @@
-from smol.core import failure, skip, step, success
+from smol.core import failure, run_steps, skip, step, success
+from smol import toolz
 
-__all__ = ["step", "success", "failure", "skip"]
+__all__ = ["failure", "run_steps", "skip", "step", "success", "toolz"]
