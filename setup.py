@@ -8,5 +8,5 @@ setup(
     author_email="beniamin.dudek@yahoo.com",
     description="Small and lean framework for automated tests.",
     packages=find_packages(),
-    install_requires=[],
+    install_requires=['attrs==20.2.0'],
 )
