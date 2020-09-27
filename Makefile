@@ -1,7 +1,7 @@
 include Makefile.venv
 
 NAME=smol
-LINE_LENGTH=80
+LINE_LENGTH=79
 
 clean: clean-pyc clean-build
 
