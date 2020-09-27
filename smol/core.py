@@ -68,7 +68,19 @@ class State:
     )
 
     def is_failure(self):
+        """Returns true if state was executed with failure."""
         return self.break_execution and not self.skipped
+
+    def is_success(self):
+        """Returns true if state was executed successfully."""
+        return not self.break_execution and not self.skipped
+
+    def is_skipped(self):
+        """Returns true if state wasn't executed. This scenario
+        mostly relates to steps that were skipped due to previous
+        step being failed.
+        """
+        return self.skipped
 
 
 def success(**kwargs):
@@ -115,28 +127,55 @@ def _head_n_tail(seq):
 Result = namedtuple("Result", ["step", "state"])
 
 
-def run_steps(steps, init_data=None):
-    result = []
-    init, rest = _head_n_tail(steps)
+@attr.s(frozen=True, kw_only=True)
+class Spec:
+    """Spec represents data and methods for running single test suite
+    scenario."""
 
-    try:
-        if init_data is not None:
-            state = init(**init_data)
-        else:
-            state = init()
-    except Exception as e:
-        state = failure(f"Exception {type(e)} occured.")
+    # TODO(thinkofher): Type error raised on validation is not readable.
+    steps = attr.ib(validator=attr.validators.instance_of(tuple))
+    description = attr.ib()
+    title = attr.ib()
+
+    def _run_step(self, step, **data):
+        """Runs single step with given data and returns
+        executed state.
+        """
+        try:
+            state = step(**data)
+        except Exception as e:
+            # TODO(thinkofher): Include stack trace.
+            state = failure(f"Exception {type(e)} occured.")
+
+        return state
+
+    def run_all(self, **init_data):
+        """Runs all steps with given initial data and returns list
+        of Results, which contains step and state of executed step.
+        """
+        result = list()
+        init, rest = _head_n_tail(self.steps)
+
+        state = self._run_step(init, **init_data)
         result.append(Result(step=init, state=state))
 
-    for step in rest:
-        if state.is_failure() or state.skipped:
-            state = skip(step)()
-        else:
-            try:
-                state = step(**state.data)
-            except Exception as e:
-                state = failure(f"Exception {type(e)} occured.")
+        for step in rest:
+            if state.is_failure() or state.skipped:
+                state = skip(step)()
+            else:
+                state = self._run_step(step, **state.data)
+            result.append(Result(step=step, state=state))
+        return result
 
-        result.append(Result(step=step, state=state))
 
-    return result
+def spec(title):
+    """Decorator for generating test specifications with given title.
+    Wrapps class with steps (tuple of Steps) field and transforms its doc
+    string into specifications description.
+    """
+
+    def decorator(obj):
+        desc = obj.__doc__ if obj.__doc__ is not None else ""
+        return Spec(steps=obj.steps, title=title, description=desc)
+
+    return decorator

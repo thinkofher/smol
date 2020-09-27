@@ -47,17 +47,21 @@ def result_is(num):
 
 
 if __name__ == "__main__":
-    steps = [
-        add_two_numbers,
-        result_is(50),
-        add(10),
-        add(5),
-        substract(15),
-        add(1),
-        result_is(51),
-    ]
-    import pprint
 
-    res = smol.run_steps(steps, init_data={"a": 10, "b": 40})
+    @smol.spec('Example scenario for testing math operations.')
+    class Scenario:
+        steps = (
+            add_two_numbers,
+            result_is(50),
+            add(10),
+            add(5),
+            substract(15),
+            add(1),
+            result_is(51),
+        )
+
+    import pprint
+    res = Scenario.run_all(a=10, b=40)
+    print(Scenario.description)
     pprint.pprint(res)
     print(all(not result.state.skipped for result in res))
