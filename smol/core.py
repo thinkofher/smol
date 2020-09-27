@@ -55,20 +55,20 @@ def step(f_or_title):
 class State:
     """State holds data and another useful flag when running tests."""
 
-    data = attr.ib(
-        factory=dict, validator=attr.validators.instance_of(dict)
-    )
+    data = attr.ib(factory=dict, validator=attr.validators.instance_of(dict))
     break_execution = attr.ib(
         factory=bool, validator=attr.validators.instance_of(bool)
     )
-    skipped = attr.ib(factory=bool, validator=attr.validators.instance_of(bool))
+    skipped = attr.ib(
+        factory=bool, validator=attr.validators.instance_of(bool)
+    )
     msg = attr.ib(
         default=None,
         validator=attr.validators.optional(attr.validators.instance_of(str)),
     )
 
     def is_failure(self):
-        return self.break_execution == True and self.skipped == False
+        return self.break_execution and not self.skipped
 
 
 def success(**kwargs):
@@ -125,7 +125,7 @@ def run_steps(steps, init_data=None):
         else:
             state = init()
     except Exception as e:
-        state = failure(f'Exception {type(e)} occured.')
+        state = failure(f"Exception {type(e)} occured.")
         result.append(Result(step=init, state=state))
 
     for step in rest:
@@ -135,7 +135,7 @@ def run_steps(steps, init_data=None):
             try:
                 state = step(**state.data)
             except Exception as e:
-                state = failure(f'Exception {type(e)} occured.')
+                state = failure(f"Exception {type(e)} occured.")
 
         result.append(Result(step=step, state=state))
 

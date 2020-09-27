@@ -1,4 +1,5 @@
-__all__ = ('unpack',)
+__all__ = ("unpack",)
+
 
 def unpack(mapping, *keys):
     """Returns tuple containing values stored in given mapping
@@ -11,5 +12,3 @@ def unpack(mapping, *keys):
         if len(keys) > 1
         else mapping[keys[0]]
     )
-
-

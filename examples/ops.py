@@ -2,6 +2,7 @@ import attr
 
 import smol
 
+
 @smol.step
 def add_two_numbers(**kwargs):
     """Returns succesfully sum of two given numbers."""
@@ -36,7 +37,9 @@ def result_is(num):
         if result == num:
             return smol.success(result=result)
         else:
-            return smol.failure(f"Given result {result} is not equal to {num}.")
+            return smol.failure(
+                f"Given result {result} is not equal to {num}."
+            )
 
     desc = f"Checks whether given result is equal to {num}."
 
