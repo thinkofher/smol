@@ -17,10 +17,10 @@ clean-build:
 isort: $(VENV)/isort
 	$(VENV)/isort */**.py
 
-lint: $(VENV)/flake8
+lint: $(VENV)/flake8 fmt
 	$(VENV)/flake8 */**.py
 
-fmt: $(VENV)/black
+fmt: $(VENV)/black isort
 	$(VENV)/black -l $(LINE_LENGTH) $(NAME)
 
 mypy: $(VENV)/mypy
