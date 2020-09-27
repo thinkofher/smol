@@ -26,24 +26,24 @@ def _title_from_func_name(func_name):
     return " ".join(func_name.split("_")).capitalize() + "."
 
 
-def _step_doc(func):
-    """Retrieves documentation from given function. Returns empty
+def _obj_doc(obj):
+    """Retrieves documentation from given object. Returns empty
     string if there is no documentation at all.
     """
-    return func.__doc__ if func.__doc__ is not None else ""
+    return obj.__doc__ if obj.__doc__ is not None else ""
 
 
 def step(f_or_title):
     """Decorator for generating Steps from custom functions."""
 
     def _factory(func):
-        return Step(func=func, description=_step_doc(func), title=f_or_title)
+        return Step(func=func, description=_obj_doc(func), title=f_or_title)
 
     try:
         return Step(
             func=f_or_title,
             title=_title_from_func_name(f_or_title.__name__),
-            description=_step_doc(f_or_title),
+            description=_obj_doc(f_or_title),
         )
     except AttributeError:
         # If we cannot retrieve function name, that means we have got
@@ -175,7 +175,7 @@ def spec(title):
     """
 
     def decorator(obj):
-        desc = obj.__doc__ if obj.__doc__ is not None else ""
+        desc = _obj_doc(obj)
         return Spec(steps=obj.steps, title=title, description=desc)
 
     return decorator
